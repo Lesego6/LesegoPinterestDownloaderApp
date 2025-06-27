@@ -6,38 +6,52 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # Use stable Ubuntu version
 
     steps:
-    - name: Check out code
+    - name: Checkout repository
       uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.10
+        python-version: "3.10"
 
-    - name: Install dependencies
+    - name: Install system dependencies
       run: |
         sudo apt update
-        sudo apt install -y build-essential git zip unzip openjdk-17-jdk python3-pip python3-setuptools python3-wheel libssl-dev libffi-dev libsqlite3-dev zlib1g-dev
+        sudo apt install -y build-essential zip unzip openjdk-17-jdk python3-pip python3-setuptools libssl-dev libffi-dev libsqlite3-dev zlib1g-dev git
+
+    - name: Install Buildozer
+      run: |
         pip install --upgrade pip
         pip install buildozer
 
     - name: Initialize Buildozer
-      run: |
-        cd ${{ github.workspace }}
-        buildozer init
+      run: buildozer init
 
-    - name: Copy main.py to match Buildozer spec
+    - name: Inject buildozer.spec
       run: |
-        cp main.py main.py.bak  # backup
-        echo '[app]\ntitle = Pinterest Downloader\npackage.name = pinterestdownloader\npackage.domain = org.example\nsource.dir = .\nsource.include_exts = py,png,jpg,kv,atlas\nversion = 1.0\nrequirements = python3,kivy,requests,beautifulsoup4\norientation = portrait\nosx.python_version = 3\n[buildozer]\nlog_level = 2\nwarn_on_root = 0' > buildozer.spec
+        echo '[app]
+title = Pinterest Downloader
+package.name = pinterestdownloader
+package.domain = org.example
+source.dir = .
+source.include_exts = py,png,jpg,kv,atlas
+version = 1.0
+requirements = python3,kivy,requests,beautifulsoup4
+orientation = portrait
+osx.python_version = 3
+
+[buildozer]
+log_level = 2
+warn_on_root = 0
+' > buildozer.spec
 
     - name: Build APK
       run: buildozer -v android debug
 
-    - name: Upload APK
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: pinterest-downloader-apk
